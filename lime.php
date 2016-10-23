@@ -1309,7 +1309,7 @@ function lime_bootstrap() {
  * write a grammar which surprises the parser in any manner.
  */
 class voodoo_scanner extends flex_scanner {
-	function executable() { return LIME_DIR.'/lime_scan_tokens'; }
+	function executable() { return LIME_DIR.DIRECTORY_SEPARATOR.'lime_scan_tokens'.(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' ? ".exe" :""); }
 }
 
 /**

@@ -1,3 +1,5 @@
 .buildpath
 .project
 .settings/
+lime_scan_tokens*
+!lime_scan_tokens.l

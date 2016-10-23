@@ -7,9 +7,16 @@ If you're familiar with BISON or YACC, you may want to read the metagrammar.
 It's written in the Lime input language, so you'll get a head-start on
 understanding how to use Lime.
 
-0. If you're not running Linux on an IA32 box, then you will have to rebuild
-	lime_scan_tokens for your system. It should be enough to erase it,
-	and then type `CFLAGS=-O2 make lime_scan_tokens` at the bash prompt.
+0. Build lime_scan_tokens for your system.
+
+	If you're running Linux on an IA32 box it should be enough to type 
+	`CFLAGS=-O2 make lime_scan_tokens` at the bash prompt.
+	
+	For Windows run
+	flex -t lime_scan_tokens.l > lime_scan_tokens.c
+	and
+	gcc lime_scan_tokens.c -o lime_scan_tokens
+	at the command line.
 
 1. Stare at the file lime/metagrammar to understand the syntax. You're seeing
 	slightly modified and tweaked Backus-Naur forms. The main differences

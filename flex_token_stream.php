@@ -13,10 +13,9 @@ abstract class flex_scanner {
 			throw new Exception("$path is not readable.");
 		}
 
-		putenv("PHP_LIME_SCAN_STDIN=$path");
-
 		$scanner = $this->executable();
-		$tokens = explode("\0", `$scanner < "\$PHP_LIME_SCAN_STDIN"`);
+
+		$tokens = explode("\0", shell_exec($scanner . ' < ' . $path));
 
 		array_pop($tokens);
 		$this->tokens = $tokens;
