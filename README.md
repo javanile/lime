@@ -9,13 +9,20 @@ understanding how to use Lime.
 
 0. Build lime_scan_tokens for your system.
 
-	If you're running Linux on an IA32 box it should be enough to type 
-	`CFLAGS=-O2 make lime_scan_tokens` at the bash prompt.
-	
+	If you're running Linux on an IA32 box it should be enough to type
+
+		`CFLAGS=-O2 make lime_scan_tokens`
+
+	at the bash prompt.
+
 	For Windows run
-	flex -t lime_scan_tokens.l > lime_scan_tokens.c
+
+		flex -t lime_scan_tokens.l > lime_scan_tokens.c
+
 	and
-	gcc lime_scan_tokens.c -o lime_scan_tokens
+
+		gcc lime_scan_tokens.c -o lime_scan_tokens.exe
+
 	at the command line.
 
 1. Stare at the file lime/metagrammar to understand the syntax. You're seeing
