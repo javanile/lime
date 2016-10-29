@@ -1,0 +1,21 @@
+{
+    "name": "gene-sis/lime",
+    "description": "Lime parser generator",
+    "type": "library",
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+        "classmap": [
+            "parse_engine.php"
+        ]
+    },
+	"extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    },
+    "config": {
+        "preferred-install": "dist"
+    }
+}
