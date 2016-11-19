@@ -15,94 +15,9 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-define('LIME_CALL_PROTOCOL', '$tokens, &$result');
+namespace Genesis\Lime;
 
-abstract class lime_parser {
-}
-
-/**
- * The input doesn't match the grammar
- */
-class parse_error extends Exception {
-}
-
-/**
- * Bug, I made a mistake
- */
-class parse_bug extends Exception {
-}
-
-class parse_unexpected_token extends parse_error {
-	public function __construct($type, $state) {
-		parent::__construct("Unexpected token of type {$type}");
-
-		$this->type = $type;
-		$this->state = $state;
-	}
-}
-
-class parse_premature_eof extends parse_error {
-	public function __construct(array $expect) {
-		parent::__construct('Premature EOF');
-	}
-}
-
-class parse_stack {
-	public $q;
-	public $qs = array();
-	/**
-	 * Stack of semantic actions
-	 */
-	public $ss = array();
-
-	public function __construct($qi) {
-		$this->q = $qi;
-	}
-
-	public function shift($q, $semantic) {
-		$this->ss[] = $semantic;
-		$this->qs[] = $this->q;
-
-		$this->q = $q;
-
-		// echo "Shift $q -- $semantic\n";
-	}
-
-	public function top_n($n) {
-		if (!$n) {
-			return array();
-		}
-
-		return array_slice($this->ss, 0 - $n);
-	}
-
-	public function pop_n($n) {
-		if (!$n) {
-			return array();
-		}
-
-		$qq = array_splice($this->qs, 0 - $n);
-		$this->q = $qq[0];
-
-		return array_splice($this->ss, 0 - $n);
-	}
-
-	public function occupied() {
-		return !empty($this->ss);
-	}
-
-	public function index($n) {
-		if ($n) {
-			$this->q = $this->qs[count($this->qs) - $n];
-		}
-	}
-
-	public function text() {
-		return $this->q . ' : ' . implode(' . ', array_reverse($this->qs));
-	}
-}
-
-class parse_engine {
+class ParseEngine {
 	public $debug = false;
 
 	public $parser;
@@ -115,7 +30,7 @@ class parse_engine {
 	 */
 	public $accept;
 	/**
-	 * @var parse_stack
+	 * @var ParseStack
 	 */
 	public $stack;
 
@@ -131,7 +46,7 @@ class parse_engine {
 
 	public function reset() {
 		$this->accept = false;
-		$this->stack = new parse_stack($this->qi);
+		$this->stack = new ParseStack($this->qi);
 		$this->parser->errors = array();
 	}
 
@@ -205,7 +120,7 @@ class parse_engine {
 				$this->premature_eof();
 				break;
 			default:
-				throw new parse_bug();
+				throw new ParseBug();
 			}
 		} while ($this->stack->occupied());
 
@@ -220,7 +135,7 @@ class parse_engine {
 		// production that the sentence was cut off during, but as a
 		// general rule that would require deeper knowledge.
 		if (!$this->accept) {
-			throw new parse_bug();
+			throw new ParseBug();
 		}
 
 		return $this->semantic;
@@ -254,7 +169,7 @@ class parse_engine {
 			}
 		}
 
-		throw new parse_premature_eof($expect);
+		throw new ParsePrematureEof($expect);
 	}
 
 	private function current_row() {
@@ -316,7 +231,7 @@ class parse_engine {
 			break;
 		case 'a':
 			if ($this->stack->occupied()) {
-				throw new parse_bug('Accept should happen with empty stack.');
+				throw new ParseBug('Accept should happen with empty stack.');
 			}
 
 			$this->accept = true;
@@ -343,11 +258,11 @@ class parse_engine {
 				}
 			} else {
 				// If that didn't work, give up:
-				throw new parse_error('Parse Error: ' . $this->descr($type, $semantic) . ' not expected, expected {' . implode(', ', $expected) . '}');
+				throw new ParseError('Parse Error: ' . $this->descr($type, $semantic) . ' not expected, expected {' . implode(', ', $expected) . '}');
 			}
 			break;
 		default:
-			throw new parse_bug("Bad parse table instruction " . htmlspecialchars($opcode));
+			throw new ParseBug("Bad parse table instruction " . htmlspecialchars($opcode));
 		}
 	}
 

@@ -1,12 +1,13 @@
 <?php
-
 /*
 File: set.so.php
 License: GPL
 Purpose: We should really have a "set" data type. It's too useful.
 */
 
-class set {
+namespace Genesis\Lime;
+
+class Set {
 	public function __construct(array $list = array()) {
 		$this->data = array_count_values($list);
 	}
