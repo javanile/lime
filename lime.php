@@ -16,14 +16,15 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-define('LIME_DIR', __DIR__);
+namespace Genesis\Lime;
 
+define('LIME_CALL_PROTOCOL', '$tokens, &$result');
 
 function emit($str) {
 	fputs(STDERR, $str . PHP_EOL);
 }
 
-class Bug extends Exception {
+class Bug extends \Exception {
 }
 
 function bug($gripe = 'Bug found.') {
@@ -42,9 +43,15 @@ function bug_unless($assertion, $gripe = 'Bug found.') {
 	}
 }
 
-require LIME_DIR . '/parse_engine.php';
-require LIME_DIR . '/set.so.php';
-require LIME_DIR . '/flex_token_stream.php';
+require __DIR__ . '/src/LimeParser.php';
+require __DIR__ . '/src/ParseBug.php';
+require __DIR__ . '/src/ParseEngine.php';
+require __DIR__ . '/src/ParseError.php';
+require __DIR__ . '/src/ParsePrematureEof.php';
+require __DIR__ . '/src/ParseStack.php';
+require __DIR__ . '/src/ParseUnexpectedToken.php';
+require __DIR__ . '/Set.php';
+require __DIR__ . '/FlexScanner.php';
 
 function lime_token_reference($pos) {
 	return '$tokens[' . $pos . ']';
@@ -240,7 +247,7 @@ class accept extends step {
 	}
 }
 
-class RRC extends Exception {
+class RRC extends \Exception {
 	public function __construct($a, $b) {
 		parent::__construct('Reduce-Reduce Conflict');
 
@@ -363,7 +370,7 @@ class sym {
 		$this->rule = array();
 		$this->config = array();
 		$this->lambda = false;
-		$this->first = new set();
+		$this->first = new Set();
 		$this->left_prec = $this->right_prec = 0;
 	}
 
@@ -468,14 +475,14 @@ class rule {
 
 	public function find_first() {
 		$dot = count($this->rhs);
-		$last = $this->first[$dot] = new set();
+		$last = $this->first[$dot] = new Set();
 		while ($dot--) {
 			$symbol_after_the_dot = $this->rhs[$dot];
 			$first = $symbol_after_the_dot->first->all();
 
 			bug_if(empty($first) and !$symbol_after_the_dot->lambda and $symbol_after_the_dot->name != 'error');
 
-			$set = new set($first);
+			$set = new Set($first);
 			if ($symbol_after_the_dot->lambda) {
 				$set->union($last);
 				if ($this->epsilon == $dot + 1) {
@@ -541,7 +548,7 @@ class config {
 		$this->rightmost = count($rule->rhs) <= $dot;
 		$this->symbol_after_the_dot = $this->rightmost ? null : $rule->rhs[$dot];
 		$this->_blink = array();
-		$this->follow = new set($follow);
+		$this->follow = new Set($follow);
 		$this->_flink = array();
 
 		bug_unless($this->rightmost or count($rule));
@@ -610,7 +617,9 @@ class config {
 
 class lime {
 	public $parser_class = 'parser';
-
+	
+	public $parser_namespace = null;
+	
 	public $descr = array();
 
 	public function __construct() {
@@ -666,7 +675,7 @@ class lime {
 			throw new Bug($this->expect_conflicts .' conflicts expected, got ' . $this->conflicts);
 		}
 
-		return $this->lang->ptab_to_class($this->parser_class, compact('a', 'qi', 'i', 'd'));
+		return $this->lang->ptab_to_class($this->parser_class, $this->parser_namespace, compact('a', 'qi', 'i', 'd'));
 	}
 
 	function rule_table() {
@@ -1014,6 +1023,9 @@ class lime {
 		case 'start':
 			$this->start_symbol_set = $args;
 			break;
+		case 'namespace':
+			$this->parser_namespace = $args[0];
+			break;
 		case 'class':
 			$this->parser_class = $args[0];
 			break;
@@ -1070,7 +1082,7 @@ class lime_language_php extends lime_language {
 		return $code;
 	}
 
-	public function ptab_to_class($parser_class, $ptab) {
+	public function ptab_to_class($parser_class, $parser_namespace, $ptab) {
 		$code  = '';
 		$code .= 'public $qi = ' . lime_export($ptab['qi'], true) . ';' . PHP_EOL;
 		$code .= 'public $i = ' . lime_export($ptab['i'], true) . ';' . PHP_EOL;
@@ -1101,11 +1113,14 @@ class lime_language_php extends lime_language {
 		}
 
 		$code .= 'public $method = ' . lime_export($method, true) . ';' . PHP_EOL;
-		$code .= 'public $a = '.lime_export($rules, true) . ';' . PHP_EOL;
-
-		return 'class ' . $parser_class . ' extends lime_parser {' . PHP_EOL .
+		$code .= 'public $a = ' . lime_export($rules, true) . ';' . PHP_EOL;
+		
+		$namespace = ( $parser_namespace ? 'namespace ' . $parser_namespace . ';' . PHP_EOL . PHP_EOL : '' );
+		$class = 'class ' . $parser_class . ' extends \Genesis\Lime\LimeParser ';
+		
+		return PHP_EOL . $namespace . $class . '{' . PHP_EOL . 
 			preg_replace(array('~^~m', '~^\h+$~m'), array(INDENT, ''), $code) .
-		'}' . PHP_EOL;
+			'}' . PHP_EOL;
 	}
 }
 
@@ -1256,7 +1271,7 @@ class lime_action extends lime_slot {
  * without ever having written an algorithm to do so. It feels like magic.
  */
 function lime_bootstrap() {
-	$bootstrap = LIME_DIR . '/lime.bootstrap';
+	$bootstrap = __DIR__ . '/lime.bootstrap';
 	$lime = new lime();
 	$lime->parser_class = 'lime_metaparser';
 	$rhs = array();
@@ -1295,6 +1310,7 @@ function lime_bootstrap() {
 	}
 
 	$parser_code = $lime->build_parser();
+	$parser_code = 'namespace Genesis\Lime;' . "\n" . $parser_code;
 	eval($parser_code);
 }
 
@@ -1308,8 +1324,8 @@ function lime_bootstrap() {
  * also contains line-number information, guaranteed to help out if you
  * write a grammar which surprises the parser in any manner.
  */
-class voodoo_scanner extends flex_scanner {
-	function executable() { return LIME_DIR.DIRECTORY_SEPARATOR.'lime_scan_tokens'.(strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' ? ".exe" :""); }
+class voodoo_scanner extends FlexScanner {
+	function executable() { return __DIR__ . DIRECTORY_SEPARATOR . 'scanner' . DIRECTORY_SEPARATOR . 'lime_scan_tokens' . (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' ? ".exe" :""); }
 }
 
 /**
@@ -1322,7 +1338,7 @@ function parse_lime_grammar($path) {
 		lime_bootstrap();
 	}
 
-	$parse_engine = new parse_engine(new lime_metaparser());
+	$parse_engine = new ParseEngine(new lime_metaparser());
 	$scanner = new voodoo_scanner($path);
 
 	try {
@@ -1330,7 +1346,7 @@ function parse_lime_grammar($path) {
 		$lime = $scanner->feed($parse_engine);
 		// Calling its build_parser() method gets the output PHP code.
 		return $lime->build_parser();
-	} catch (parse_error $e) {
+	} catch (ParseError $e) {
 		die ($e->getMessage() . " in {$path} line {$scanner->lineno}." . PHP_EOL);
 	}
 }

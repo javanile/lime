@@ -5,12 +5,15 @@
  * Extend this class so that executable() gives a path to your lexical
  * analyser program.
  */
-abstract class flex_scanner {
+
+namespace Genesis\Lime;
+
+ abstract class FlexScanner {
 	abstract function executable();
 
 	public function __construct($path) {
 		if (!is_readable($path)) {
-			throw new Exception("$path is not readable.");
+			throw new \Exception("$path is not readable.");
 		}
 
 		$scanner = $this->executable();

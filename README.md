@@ -3,79 +3,88 @@ Lime: An LALR(1) parser generator in and for PHP.
 
 _Interpreter pattern got you down? Time to use a real parser? Welcome to Lime._
 
-If you're familiar with BISON or YACC, you may want to read the metagrammar.
-It's written in the Lime input language, so you'll get a head-start on
-understanding how to use Lime.
 
-0. Build lime_scan_tokens for your system.
-
-	If you're running Linux on an IA32 box it should be enough to type
-
-		`CFLAGS=-O2 make lime_scan_tokens`
-
-	at the bash prompt.
-
+1. Use composer to install Lime.
+	
+	`composer require gene-sis/lime`
+	
+2. Build lime_scan_tokens for your development OS.
+	
 	For Windows run
-
-		flex -t lime_scan_tokens.l > lime_scan_tokens.c
-
+`flex -t vendor\gene-sis\lime\scanner\lime_scan_tokens.l > vendor\gene-sis\lime\scanner\lime_scan_tokens.c`
 	and
-
-		gcc lime_scan_tokens.c -o lime_scan_tokens.exe
-
-	at the command line.
-
-1. Stare at the file lime/metagrammar to understand the syntax. You're seeing
-	slightly modified and tweaked Backus-Naur forms. The main differences
-	are that you get to name your components, instead of refering to them
-	by numbers the way that BISON demands. This idea was stolen from the
-	C-based "Lemon" parser from which Lime derives its name. Incidentally,
-	the author of Lemon disclaimed copyright, so you get a copy of the C
-	code that taught me LALR(1) parsing better than any book, despite the
-	obvious difficulties in understanding it. Oh, and one other thing:
-	symbols are terminal if the scanner feeds them to the parser. They
-	are non-terminal if they appear on the left side of a production rule.
-	Lime names semantic categories using strings instead of the numbers
-	that BISON-based parsers use, so you don't have to declare any list of
-	terminal symbols anywhere.
-
-2. Look at the file lime/lime.php to see what pragmas are defined. To be more
-	specific, you might look at the method `lime::pragma()`, which at the
-	time of this writing, supports "`%left`", "`%right`", "`%nonassoc`",
-	"`%start`", and "`%class`". The first three are for operator precedence.
-	The last two declare the start symbol and the name of a PHP class to
-	generate which will hold all the bottom-up parsing tables.
-
-3. Write a grammar file.
-
-4. `/path/to/lime/lime.php list-of-grammar-files > my_parser.php`
-
-5. Read the function `parse_lime_grammar()` in lime.php to understand
-	how to integrate your parser into your program.
-
-6. Integrate your parser as follows:
-
-		require 'lime/parse_engine.php';
-		require 'my_parser.php';
-		//
-		// Later:
-		//
-		$parser = new parse_engine(new my_parser());
-		//
-		// And still later:
-		//
-		try {
-			while (..something..) {
-				$parser->eat($type, $val);
-				// You figure out how to get the parameters.
-			}
-			// And after the last token has been eaten:
-			$parser->eat_eof();
-		} catch (parse_error $e) {
-			die($e->getMessage());
+`gcc vendor\gene-sis\lime\scanner\lime_scan_tokens.c -o vendor\gene-sis\lime\scanner\lime_scan_tokens.exe`
+	from the command line.
+	
+3. Write a grammar file
+	
+	Lime uses slightly modified and tweaked Backus-Naur forms.
+	You can look at the .lime examples in the folder
+	/vendor/gene-sis/lime/examples to understand the grammar.
+	
+	You can refer to your components by numbers the way BISON demands
+`	exp =	exp '+' exp {
+				$$ = $1 + $3;
+			);`
+	or assign symbolic names (similar to C-based "Lemon" parser from which
+	Lime derives its name)
+`	exp =	exp/a '+' exp/b {
+				$$ = $a + $b;
+			);`
+	Oh, and one other thing: symbols are terminal if the scanner feeds them
+	to the parser. They are non-terminal if they appear on the left side of
+	a production rule. Lime names semantic categories using strings instead
+	of the numbers that BISON-based parsers use, so you don't have to declare
+	any list of	terminal symbols anywhere.
+	
+4. Defined pragmas
+	- %namespace
+		define the namespace of your parser file (enclose in single quotes)
+		e.g. `%namespace 'YourProject\Extensions\Lime'`
+	- %class
+		define the class name of your parser
+	- %start
+		define the start symbol of your grammar
+	- %left
+	- %right
+	- %nonassoc
+	- %expect
+	
+5. Build your parser
+	
+	php /vendor/gene-sis/lime/lime.php path/to/your/grammar/file.lime > MyParser.php
+	
+6. Integrate your parser into your project
+	
+```php
+	// below the namespace
+	use YourProject\Extensions\Lime\MyParser;
+	use Genesis\Lime\ParseEngine;
+	use Genesis\Lime\ParseError;
+	
+	// create the parser instance
+	$parser = new ParseEngine( new MyParser() );
+	
+	// run the parser
+	try {
+		// reset the parser
+		$parser->reset();
+		
+		// tokenize your input with a suitable function/method and feed the
+		// tokens to the parser
+		foreach( tokenize( $input ) as $token ) {
+			$parser->eat( $token['type'], $token['value'] );
 		}
-		return $parser->semantic;
-
+		
+		// get the result
+		$result = $parser->eat_eof();
+		
+	} catch ( ParseError $e ) {
+		// handle parse errors
+		$error = $e->getMessage();
+	}
+```
+	
 7. You now have the computed semantic value of whatever you parsed. Add salt
 	and pepper to taste, and serve.
-
+	
