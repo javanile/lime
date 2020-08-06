@@ -1,10 +1,5 @@
 # lime
 
-
-
-
-
 ```bash
-docker run --rm javanile/lime grammar.lime 
+docker run --rm javanile/lime grammar.lime > Grammar.php
 ```
-
