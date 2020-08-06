@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-set -- lime "${@}"
+set -- php /opt/lime/lime.php "${@}"
 
 exec "${@}"

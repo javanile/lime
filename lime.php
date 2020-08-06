@@ -551,7 +551,7 @@ class config {
 		$this->follow = new Set($follow);
 		$this->_flink = array();
 
-		bug_unless($this->rightmost or count($rule));
+		bug_unless($this->rightmost or @count($rule));
 	}
 
 	public function text() {
@@ -617,9 +617,9 @@ class config {
 
 class lime {
 	public $parser_class = 'parser';
-	
+
 	public $parser_namespace = null;
-	
+
 	public $descr = array();
 
 	public function __construct() {
@@ -1114,11 +1114,11 @@ class lime_language_php extends lime_language {
 
 		$code .= 'public $method = ' . lime_export($method, true) . ';' . PHP_EOL;
 		$code .= 'public $a = ' . lime_export($rules, true) . ';' . PHP_EOL;
-		
+
 		$namespace = ( $parser_namespace ? 'namespace ' . $parser_namespace . ';' . PHP_EOL . PHP_EOL : '' );
 		$class = 'class ' . $parser_class . ' extends \Genesis\Lime\LimeParser ';
-		
-		return PHP_EOL . $namespace . $class . '{' . PHP_EOL . 
+
+		return PHP_EOL . $namespace . $class . '{' . PHP_EOL .
 			preg_replace(array('~^~m', '~^\h+$~m'), array(INDENT, ''), $code) .
 			'}' . PHP_EOL;
 	}
