@@ -1,0 +1,16 @@
+{
+    "name": "gene-sis/lime",
+    "description": "Lime parser generator",
+    "type": "library",
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+		"psr-4": {
+            "Genesis\\Lime\\": "src/"
+		}
+    },
+    "config": {
+        "preferred-install": "dist"
+    }
+}

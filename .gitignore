@@ -23,3 +23,10 @@ Homestead.json
 .phpunit.result.cache
 .idea/
 .vscode/
+
+.buildpath
+.project
+.settings/
+/vendor
+lime_scan_tokens*
+!lime_scan_tokens.l
