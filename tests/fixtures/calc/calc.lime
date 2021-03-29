@@ -1,3 +1,4 @@
+%namespace "Ciao\Poi"
 %class calc
 %start stmt
 
